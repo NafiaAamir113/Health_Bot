@@ -1,2 +1,2 @@
 # Health_Bot
-Analyze the symptoms and give recommendarions
+Analyze the symptoms and give recommendations 
