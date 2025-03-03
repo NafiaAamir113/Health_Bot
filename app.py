@@ -67,7 +67,7 @@
 import streamlit as st
 from transformers import pipeline
 
-# Load a different model (distilbert-based for QA tasks)
+# Load the model (lightweight yet effective)
 try:
     qa_pipeline = pipeline("question-answering", model="deepset/tinyroberta-squad2")
 except Exception as e:
@@ -79,44 +79,27 @@ def format_query(user_input):
         return f"What could be the cause of {user_input}?"
     return user_input
 
-# Expanded Rule-based Responses
-def rule_based_response(user_input):
-    symptoms_dict = {
-        "headache": "Possible causes include migraines, tension headaches, or sinus infections. If persistent, consult a doctor.",
-        "fever": "A fever could indicate flu, infection, or inflammation. If it lasts more than 3 days, seek medical advice.",
-        "joint pain": "Joint pain may result from arthritis, autoimmune diseases, or infections. Persistent pain requires medical evaluation.",
-        "fatigue": "Fatigue can be caused by anemia, dehydration, thyroid issues, or stress. Ensure proper hydration and nutrition.",
-        "dizziness": "Dizziness may result from low blood pressure, vertigo, or anemia. If frequent, consult a doctor.",
-        "stomach pain": "Stomach pain may be due to food poisoning, gastritis, IBS, or an ulcer. If severe, seek medical help.",
-        "cough": "A persistent cough could indicate flu, asthma, pneumonia, or even COVID-19. Monitor symptoms closely.",
-    }
-    
-    for symptom, response in symptoms_dict.items():
-        if symptom in user_input.lower():
-            return response
-    return None
+# Medical knowledge base
+medical_context = """
+Possible causes for common symptoms:
+- Severe headache + no relief from painkillers: Migraine, brain hemorrhage, or meningitis.
+- Persistent joint pain without exercise: Rheumatoid arthritis, osteoarthritis, or autoimmune disease.
+- Fatigue + dizziness: Anemia, dehydration, heart issues, or low blood pressure.
+- Sore throat + fever + cough: Cold, flu, strep throat, or COVID-19.
+- Stomach pain + nausea: Food poisoning, gastritis, IBS, or acid reflux.
+- Shortness of breath + wheezing: Asthma, pneumonia, or heart failure.
+- Chest pain + left arm numbness: Possible heart attack, see a doctor immediately.
+- Swollen feet + fatigue: Kidney disease, heart failure, or poor circulation.
+Consult a doctor if symptoms persist.
+"""
 
 # Chatbot response function
 def chatbot_response(user_input):
     formatted_query = format_query(user_input)
-    rule_response = rule_based_response(user_input)
-    
-    if rule_response:
-        return rule_response
-    
-    context = """
-    Common symptoms and potential causes:
-    - Sore throat + fever + cough: Cold, flu, or COVID-19.
-    - Stomach pain + nausea: Food poisoning, gastritis, or IBS.
-    - Wheezing + breathing difficulty: Asthma, allergy, or pneumonia.
-    - Fatigue + dizziness: Anemia, dehydration, or low blood pressure.
-    - Severe headache that doesn’t go away with painkillers: Migraine, tension headache, brain hemorrhage, or meningitis. Seek medical attention if persistent.
-    Consult a doctor if symptoms persist.
-    """
-    
+
     try:
         if qa_pipeline:
-            response = qa_pipeline(question=formatted_query, context=context)
+            response = qa_pipeline(question=formatted_query, context=medical_context)
             return response['answer']
         else:
             return "AI model is unavailable. Try again later."
@@ -140,8 +123,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
