@@ -65,4 +65,78 @@
 
 
 
+import streamlit as st
+from transformers import pipeline
+
+# Load an improved open-source AI model (FLAN-T5 for better reasoning)
+try:
+    qa_pipeline = pipeline("text2text-generation", model="google/flan-t5-large")
+except Exception as e:
+    qa_pipeline = None  # Handle model loading failure
+
+# Function to structure the query
+def format_query(user_input):
+    if not user_input.endswith("?"):
+        return f"What could be the cause of {user_input}?"
+    return user_input
+
+# Chatbot response function
+def chatbot_response(user_input):
+    formatted_query = format_query(user_input)
+
+    # Rule-based responses for common symptoms
+    if "headache" in user_input and "fever" in user_input and "7 days" in user_input:
+        return "A persistent headache with fever for a week could indicate a serious infection. Seek medical attention."
+    
+    elif "headache" in user_input and "fever" in user_input:
+        return "A headache with fever may be caused by flu, sinusitis, or meningitis. If severe, consult a doctor."
+    
+    elif "joints ache" in user_input:
+        return ("Possible causes of joint pain include:\n"
+                "- **Osteoarthritis**: Wear and tear on joints.\n"
+                "- **Rheumatoid Arthritis**: An autoimmune condition.\n"
+                "- **Gout**: Uric acid buildup in joints.\n"
+                "- **Vitamin Deficiency**: Lack of vitamin D or calcium.\n"
+                "- **Infections**: Some bacterial infections can cause joint pain.\n"
+                "\nIf symptoms persist or worsen, seek medical advice.")
+    
+    # AI-generated response
+    context = (
+        "Common symptoms and possible causes:\n"
+        "- Severe headache + nausea: Migraine, brain hemorrhage, or meningitis.\n"
+        "- Cough + fever: Flu, pneumonia, or COVID-19.\n"
+        "- Chest pain + shortness of breath: Heart issues or anxiety attack.\n"
+        "- Fatigue + dizziness: Anemia, dehydration, or low blood sugar.\n"
+        "\nThis chatbot is for informational purposes only. Always consult a healthcare professional."
+    )
+    
+    try:
+        if qa_pipeline:
+            response = qa_pipeline(f"{formatted_query} Context: {context}", max_length=100, truncation=True)
+            return response[0]['generated_text']
+        else:
+            return "AI model is unavailable. Try again later."
+    except Exception as e:
+        return f"Error: {e}"
+
+# Streamlit UI
+def main():
+    st.title("🩺 Health Symptom Checker Chatbot 🤖")
+    st.write("Enter your symptoms or health-related questions, and the AI will assist you!")
+
+    user_input = st.text_input("Enter your symptoms or question:")
+
+    if user_input:
+        with st.spinner("Analyzing..."):
+            response = chatbot_response(user_input)
+            st.write("**AI Response:**", response)
+
+    st.write("---")
+    st.warning("⚠️ **Note:** This chatbot provides general health information. Consult a doctor for medical advice.")
+
+if __name__ == "__main__":
+    main()
+
+
+
 
