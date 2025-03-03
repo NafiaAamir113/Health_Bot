@@ -64,15 +64,14 @@
 
 
 
-
 import streamlit as st
 from transformers import pipeline
 
-# Load an improved open-source AI model (FLAN-T5 for better reasoning)
+# Load a different model (DistilBERT for QA tasks)
 try:
-    qa_pipeline = pipeline("text2text-generation", model="google/flan-t5-large")
+    qa_pipeline = pipeline("question-answering", model="distilbert-base-cased-distilled-squad")
 except Exception as e:
-    qa_pipeline = None  # Handle model loading failure
+    qa_pipeline = None  # Handle case where model fails to load
 
 # Function to structure the query
 def format_query(user_input):
@@ -85,35 +84,48 @@ def chatbot_response(user_input):
     formatted_query = format_query(user_input)
 
     # Rule-based responses for common symptoms
-    if "headache" in user_input and "fever" in user_input and "7 days" in user_input:
-        return "A persistent headache with fever for a week could indicate a serious infection. Seek medical attention."
-    
-    elif "headache" in user_input and "fever" in user_input:
-        return "A headache with fever may be caused by flu, sinusitis, or meningitis. If severe, consult a doctor."
-    
+    if "headache" in user_input:
+        return ("A headache that doesn't improve with painkillers may have multiple causes, including:\n"
+                "- **Migraines**: Often with nausea, sensitivity to light, and visual disturbances.\n"
+                "- **Tension Headaches**: Stress-related pain, like a band tightening around the head.\n"
+                "- **Sinus Headache**: Pressure due to sinus infections, often with nasal congestion.\n"
+                "- **Caffeine Withdrawal**: Cutting down on caffeine can trigger headaches.\n"
+                "- **Dehydration**: Lack of fluids can cause persistent headaches.\n"
+                "- **High Blood Pressure**: Severe hypertension may result in pounding headaches.\n"
+                "- **Serious Conditions (Seek urgent care if you experience):**\n"
+                "  - **Brain Hemorrhage**: Sudden, severe headache with confusion, vision loss, or weakness.\n"
+                "  - **Meningitis**: Stiff neck, fever, and sensitivity to light.\n"
+                "\n🚨 **When to See a Doctor:**\n"
+                "- If the headache is **sudden & severe (worst headache ever)**.\n"
+                "- If it comes with **vomiting, confusion, or loss of consciousness**.\n"
+                "- If it **lasts more than 72 hours** despite medication.")
+
     elif "joints ache" in user_input:
-        return ("Possible causes of joint pain include:\n"
+        return ("Joint pain without exercise could be caused by:\n"
                 "- **Osteoarthritis**: Wear and tear on joints.\n"
-                "- **Rheumatoid Arthritis**: An autoimmune condition.\n"
-                "- **Gout**: Uric acid buildup in joints.\n"
-                "- **Vitamin Deficiency**: Lack of vitamin D or calcium.\n"
-                "- **Infections**: Some bacterial infections can cause joint pain.\n"
-                "\nIf symptoms persist or worsen, seek medical advice.")
-    
+                "- **Rheumatoid Arthritis**: An autoimmune disorder affecting joints.\n"
+                "- **Gout**: Uric acid buildup causing sharp joint pain.\n"
+                "- **Vitamin D Deficiency**: Can weaken bones and cause discomfort.\n"
+                "- **Infections (e.g., Lyme Disease)**: Some bacterial infections trigger joint pain.\n"
+                "\n🚨 **When to See a Doctor:**\n"
+                "- If the pain is persistent, severe, or accompanied by swelling or redness.\n"
+                "- If it's affecting multiple joints suddenly.")
+
     # AI-generated response
-    context = (
-        "Common symptoms and possible causes:\n"
-        "- Severe headache + nausea: Migraine, brain hemorrhage, or meningitis.\n"
-        "- Cough + fever: Flu, pneumonia, or COVID-19.\n"
-        "- Chest pain + shortness of breath: Heart issues or anxiety attack.\n"
-        "- Fatigue + dizziness: Anemia, dehydration, or low blood sugar.\n"
-        "\nThis chatbot is for informational purposes only. Always consult a healthcare professional."
-    )
+    context = """
+    Common symptoms and potential causes:
+    - Sore throat + fever + cough: Cold, flu, or COVID-19.
+    - Stomach pain + nausea: Food poisoning, gastritis, or IBS.
+    - Wheezing + breathing difficulty: Asthma, allergy, or pneumonia.
+    - Fatigue + dizziness: Anemia, dehydration, or low blood pressure.
+    - Severe headache that doesn’t go away with painkillers: Migraine, tension headache, brain hemorrhage, or meningitis. Seek medical attention if persistent.
+    Consult a doctor if symptoms persist.
+    """
     
     try:
         if qa_pipeline:
-            response = qa_pipeline(f"{formatted_query} Context: {context}", max_length=100, truncation=True)
-            return response[0]['generated_text']
+            response = qa_pipeline(question=formatted_query, context=context)
+            return response['answer']
         else:
             return "AI model is unavailable. Try again later."
     except Exception as e:
@@ -121,7 +133,7 @@ def chatbot_response(user_input):
 
 # Streamlit UI
 def main():
-    st.title("🩺 Health Symptom Checker Chatbot 🤖")
+    st.title("🩺 Medical Symptom Checker Chatbot 🤖")
     st.write("Enter your symptoms or health-related questions, and the AI will assist you!")
 
     user_input = st.text_input("Enter your symptoms or question:")
@@ -132,7 +144,7 @@ def main():
             st.write("**AI Response:**", response)
 
     st.write("---")
-    st.warning("⚠️ **Note:** This chatbot provides general health information. Consult a doctor for medical advice.")
+    st.warning("⚠️ **Note:** This chatbot is for informational purposes only. Always consult a doctor.")
 
 if __name__ == "__main__":
     main()
