@@ -69,7 +69,7 @@ from transformers import pipeline
 
 # Load an advanced open-source model (Mistral 7B Instruct for better reasoning)
 try:
-    qa_pipeline = pipeline("question-answering", model="deepset/roberta-base-squad2", device=0 if torch.cuda.is_available() else -1)
+    qa_pipeline = pipeline("question-answering", model="deepset/bert-large-uncased-whole-word-masking-finetuned-squad", device=0 if torch.cuda.is_available() else -1)
 except Exception as e:
     st.error(f"Error loading AI model: {e}")
     qa_pipeline = None  # Handle case where model fails to load
