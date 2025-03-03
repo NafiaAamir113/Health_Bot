@@ -64,16 +64,17 @@
 
 
 import streamlit as st
+import torch
 from transformers import pipeline
 
-# Load a more advanced model (Mistral 7B Instruct for better reasoning)
+# Load an advanced open-source model (Mistral 7B Instruct for better reasoning)
 try:
-    qa_pipeline = pipeline("text-generation", model="mistralai/Mistral-7B-Instruct-v0.1")
+    qa_pipeline = pipeline("question-answering", model="deepset/roberta-base-squad2", device=0 if torch.cuda.is_available() else -1)
 except Exception as e:
+    st.error(f"Error loading AI model: {e}")
     qa_pipeline = None  # Handle case where model fails to load
 
 # Function to structure the query
-
 def format_query(user_input):
     if not user_input.endswith("?"):
         return f"What could be the cause of {user_input}?"
@@ -84,12 +85,17 @@ def chatbot_response(user_input):
     formatted_query = format_query(user_input)
 
     # Rule-based responses for common symptoms
-    if "headache" in user_input and "fever" in user_input and "7 days" in user_input:
-        return "Headache and fever lasting for several days might indicate flu or infection. See a doctor."
-
-    elif "headache" in user_input and "fever" in user_input:
-        return "A headache with fever may indicate flu, sinusitis, or an infection. Seek medical attention if symptoms persist."
+    symptom_rules = {
+        ("headache", "fever", "7 days"): "Headache and fever lasting for several days might indicate flu or infection. See a doctor.",
+        ("headache", "fever"): "A headache with fever may indicate flu, sinusitis, or an infection. Seek medical attention if symptoms persist.",
+        ("chest pain", "breathing difficulty"): "Chest pain with breathing difficulty can be serious. Seek medical help immediately.",
+        ("nausea", "vomiting", "stomach pain"): "Nausea, vomiting, and stomach pain may be due to food poisoning, gastritis, or IBS."
+    }
     
+    for symptoms, response in symptom_rules.items():
+        if all(symptom in user_input.lower() for symptom in symptoms):
+            return response
+
     # AI-generated response
     context = """
     Common symptoms and potential causes:
@@ -102,12 +108,12 @@ def chatbot_response(user_input):
     
     try:
         if qa_pipeline:
-            response = qa_pipeline(formatted_query + "\n\n" + context, max_length=200, num_return_sequences=1)
-            return response[0]['generated_text']
+            response = qa_pipeline(question=formatted_query, context=context)
+            return response.get('answer', "I'm not sure. Please consult a doctor.")
         else:
             return "AI model is unavailable. Try again later."
     except Exception as e:
-        return f"Error: {e}"
+        return f"Error generating response: {e}"
 
 # Streamlit UI
 def main():
