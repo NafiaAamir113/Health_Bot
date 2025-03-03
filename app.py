@@ -69,7 +69,7 @@ from transformers import pipeline
 
 # Load the model (lightweight yet effective)
 try:
-    qa_pipeline = pipeline("question-answering", model="deepset/tinyroberta-squad2")
+    qa_pipeline = pipeline("question-answering", model="facebook/bart-large-mnli")
 except Exception as e:
     qa_pipeline = None  # Handle case where model fails to load
 
