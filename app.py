@@ -62,52 +62,56 @@
 #     main()
 
 
-
 import streamlit as st
-import torch
 from transformers import pipeline
 
-# Load an advanced open-source model (Mistral 7B Instruct for better reasoning)
+# Load a reliable Q&A model
 try:
-    # qa_pipeline = pipeline("question-answering", model="deepset/bert-large-uncased-whole-word-masking-finetuned-squad", device=0 if torch.cuda.is_available() else -1)
     qa_pipeline = pipeline("question-answering", model="distilbert-base-cased-distilled-squad")
-
 except Exception as e:
     st.error(f"Error loading AI model: {e}")
-    qa_pipeline = None  # Handle case where model fails to load
+    qa_pipeline = None
 
-# Function to structure the query
-def format_query(user_input):
-    if not user_input.endswith("?"):
-        return f"What could be the cause of {user_input}?"
-    return user_input
+# Rule-based responses for accurate symptom matching
+def rule_based_response(user_input):
+    symptoms = user_input.lower()
 
-# Chatbot response function
+    if "severe headache" in symptoms and "doesn’t go away" in symptoms and "painkillers" in symptoms:
+        return "A severe headache that doesn’t respond to painkillers may indicate a **migraine, tension headache, brain hemorrhage, or meningitis**. If persistent, seek medical attention immediately."
+
+    elif "headache" in symptoms and "fever" in symptoms and "7 days" in symptoms:
+        return "A **long-lasting headache with fever** may indicate **serious infection, meningitis, or another underlying condition**. Seek medical help."
+
+    elif "headache" in symptoms and "fever" in symptoms:
+        return "A headache with fever may indicate **flu, sinusitis, or infection**. Monitor symptoms and consult a doctor."
+
+    elif "chest pain" in symptoms and "breathing difficulty" in symptoms:
+        return "Chest pain with breathing difficulty can be **serious (heart attack, pulmonary embolism, or pneumonia)**. **Seek emergency care.**"
+
+    elif "nausea" in symptoms and "vomiting" in symptoms and "stomach pain" in symptoms:
+        return "Nausea, vomiting, and stomach pain could be due to **food poisoning, gastritis, or an ulcer**. If severe, consult a doctor."
+
+    return None  # If no rule-based match, use AI
+
+# AI-generated response function
 def chatbot_response(user_input):
-    formatted_query = format_query(user_input)
+    rule_based = rule_based_response(user_input)
+    if rule_based:
+        return rule_based  # Return immediate response if a rule-based match exists
 
-    # Rule-based responses for common symptoms
-    symptom_rules = {
-        ("headache", "fever", "7 days"): "Headache and fever lasting for several days might indicate flu or infection. See a doctor.",
-        ("headache", "fever"): "A headache with fever may indicate flu, sinusitis, or an infection. Seek medical attention if symptoms persist.",
-        ("chest pain", "breathing difficulty"): "Chest pain with breathing difficulty can be serious. Seek medical help immediately.",
-        ("nausea", "vomiting", "stomach pain"): "Nausea, vomiting, and stomach pain may be due to food poisoning, gastritis, or IBS."
-    }
-    
-    for symptoms, response in symptom_rules.items():
-        if all(symptom in user_input.lower() for symptom in symptoms):
-            return response
+    formatted_query = user_input.strip() + "?"
 
-    # AI-generated response
     context = """
-    Common symptoms and potential causes:
-    - Sore throat + fever + cough: Cold, flu, or COVID-19.
-    - Stomach pain + nausea: Food poisoning, gastritis, or IBS.
-    - Wheezing + breathing difficulty: Asthma, allergy, or pneumonia.
-    - Fatigue + dizziness: Anemia, dehydration, or low blood pressure.
-    Consult a doctor if symptoms persist.
+    Possible causes of common symptoms:
+    - **Severe headache that doesn’t go away**: **Migraine, tension headache, brain hemorrhage, meningitis.**
+    - **Sore throat + fever + cough**: Could be **cold, flu, strep throat, or COVID-19.**
+    - **Stomach pain + nausea**: Could be **food poisoning, gastritis, or IBS.**
+    - **Chest pain + shortness of breath**: May be **heart attack, asthma, or anxiety attack.**
+    - **Fatigue + dizziness**: Possible **anemia, low blood pressure, dehydration.**
+    - **Joint pain + swelling**: Could be **arthritis, gout, autoimmune disorder.**
+    **Always consult a doctor for a professional diagnosis.**
     """
-    
+
     try:
         if qa_pipeline:
             response = qa_pipeline(question=formatted_query, context=context)
