@@ -61,13 +61,12 @@
 # if __name__ == "__main__":
 #     main()
 
-
 import streamlit as st
 from transformers import pipeline
 
-# Load a different model (distilbert-based for QA tasks)
+# Load a different model (Falcon 7B Instruct for better reasoning)
 try:
-    qa_pipeline = pipeline("question-answering", model="deepset/bert-large-uncased-whole-word-masking-finetuned-squad")
+    qa_pipeline = pipeline("text-generation", model="tiiuae/falcon-7b-instruct")
 except Exception as e:
     qa_pipeline = None  # Handle case where model fails to load
 
@@ -110,8 +109,8 @@ def chatbot_response(user_input):
     
     try:
         if qa_pipeline:
-            response = qa_pipeline(question=formatted_query, context=context)
-            return response['answer']
+            response = qa_pipeline(formatted_query + "\n\n" + context, max_length=200, num_return_sequences=1)
+            return response[0]['generated_text']
         else:
             return "AI model is unavailable. Try again later."
     except Exception as e:
