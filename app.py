@@ -69,7 +69,7 @@ from transformers import pipeline
 
 # Load a different model (distilbert-based for QA tasks)
 try:
-    qa_pipeline = pipeline("question-answering", model="deepset/bert-large-uncased-whole-word-masking-finetuned-squad")
+    qa_pipeline = pipeline("question-answering", model="deepset/tinyroberta-squad2")
 except Exception as e:
     qa_pipeline = None  # Handle case where model fails to load
 
