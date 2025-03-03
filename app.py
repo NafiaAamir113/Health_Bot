@@ -67,9 +67,9 @@
 import streamlit as st
 from transformers import pipeline
 
-# Load a different model (DistilBERT for QA tasks)
+# Load a different model (distilbert-based for QA tasks)
 try:
-    qa_pipeline = pipeline("question-answering", model="distilbert-base-cased-distilled-squad")
+    qa_pipeline = pipeline("question-answering", model="deepset/bert-large-uncased-whole-word-masking-finetuned-squad")
 except Exception as e:
     qa_pipeline = None  # Handle case where model fails to load
 
@@ -79,39 +79,31 @@ def format_query(user_input):
         return f"What could be the cause of {user_input}?"
     return user_input
 
+# Expanded Rule-based Responses
+def rule_based_response(user_input):
+    symptoms_dict = {
+        "headache": "Possible causes include migraines, tension headaches, or sinus infections. If persistent, consult a doctor.",
+        "fever": "A fever could indicate flu, infection, or inflammation. If it lasts more than 3 days, seek medical advice.",
+        "joint pain": "Joint pain may result from arthritis, autoimmune diseases, or infections. Persistent pain requires medical evaluation.",
+        "fatigue": "Fatigue can be caused by anemia, dehydration, thyroid issues, or stress. Ensure proper hydration and nutrition.",
+        "dizziness": "Dizziness may result from low blood pressure, vertigo, or anemia. If frequent, consult a doctor.",
+        "stomach pain": "Stomach pain may be due to food poisoning, gastritis, IBS, or an ulcer. If severe, seek medical help.",
+        "cough": "A persistent cough could indicate flu, asthma, pneumonia, or even COVID-19. Monitor symptoms closely.",
+    }
+    
+    for symptom, response in symptoms_dict.items():
+        if symptom in user_input.lower():
+            return response
+    return None
+
 # Chatbot response function
 def chatbot_response(user_input):
     formatted_query = format_query(user_input)
-
-    # Rule-based responses for common symptoms
-    if "headache" in user_input:
-        return ("A headache that doesn't improve with painkillers may have multiple causes, including:\n"
-                "- **Migraines**: Often with nausea, sensitivity to light, and visual disturbances.\n"
-                "- **Tension Headaches**: Stress-related pain, like a band tightening around the head.\n"
-                "- **Sinus Headache**: Pressure due to sinus infections, often with nasal congestion.\n"
-                "- **Caffeine Withdrawal**: Cutting down on caffeine can trigger headaches.\n"
-                "- **Dehydration**: Lack of fluids can cause persistent headaches.\n"
-                "- **High Blood Pressure**: Severe hypertension may result in pounding headaches.\n"
-                "- **Serious Conditions (Seek urgent care if you experience):**\n"
-                "  - **Brain Hemorrhage**: Sudden, severe headache with confusion, vision loss, or weakness.\n"
-                "  - **Meningitis**: Stiff neck, fever, and sensitivity to light.\n"
-                "\n🚨 **When to See a Doctor:**\n"
-                "- If the headache is **sudden & severe (worst headache ever)**.\n"
-                "- If it comes with **vomiting, confusion, or loss of consciousness**.\n"
-                "- If it **lasts more than 72 hours** despite medication.")
-
-    elif "joints ache" in user_input:
-        return ("Joint pain without exercise could be caused by:\n"
-                "- **Osteoarthritis**: Wear and tear on joints.\n"
-                "- **Rheumatoid Arthritis**: An autoimmune disorder affecting joints.\n"
-                "- **Gout**: Uric acid buildup causing sharp joint pain.\n"
-                "- **Vitamin D Deficiency**: Can weaken bones and cause discomfort.\n"
-                "- **Infections (e.g., Lyme Disease)**: Some bacterial infections trigger joint pain.\n"
-                "\n🚨 **When to See a Doctor:**\n"
-                "- If the pain is persistent, severe, or accompanied by swelling or redness.\n"
-                "- If it's affecting multiple joints suddenly.")
-
-    # AI-generated response
+    rule_response = rule_based_response(user_input)
+    
+    if rule_response:
+        return rule_response
+    
     context = """
     Common symptoms and potential causes:
     - Sore throat + fever + cough: Cold, flu, or COVID-19.
@@ -148,6 +140,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
